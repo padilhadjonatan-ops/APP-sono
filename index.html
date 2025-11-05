@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>SleepSynncc - Monitor Inteligente de Sono</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tensorflow@latest/dist/tf.min.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="sleep-icon">
+                <i class="fas fa-moon"></i>
+            </div>
+            <h2>SleepSynncc</h2>
+            <p>Inicializando sistema de monitoramento...</p>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loadingProgress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-moon"></i>
+                    <h1>SleepSynncc</h1>
+                </div>
+                <div class="header-controls">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="connection-status" id="connectionStatus">
+                        <i class="fas fa-wifi"></i>
+                        <span class="connection-text">Conectado</span>
+                    </div>
+                    <button class="settings-btn" id="settingsBtn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="main-nav" id="mainNav">
+            <button class="nav-item active" data-section="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-item" data-section="monitoring">
+                <i class="fas fa-heartbeat"></i>
+                <span>Monitoramento</span>
+            </button>
+            <button class="nav-item" data-section="analysis">
+                <i class="fas fa-brain"></i>
+                <span>Análise</span>
+            </button>
+            <button class="nav-item" data-section="recommendations">
+                <i class="fas fa-lightbulb"></i>
+                <span>Recomendações</span>
+            </button>
+            <button class="nav-item" data-section="profile">
+                <i class="fas fa-user"></i>
+                <span>Perfil</span>
+            </button>
+        </nav>
+
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+        <nav class="mobile-nav" id="mobileNav">
+            <div class="mobile-nav-header">
+                <h3>Menu</h3>
+                <button class="mobile-menu-close" id="mobileMenuClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mobile-nav-items">
+                <button class="mobile-nav-item active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="mobile-nav-item" data-section="monitoring">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Monitoramento</span>
+                </button>
+                <button class="mobile-nav-item" data-section="analysis">
+                    <i class="fas fa-brain"></i>
+                    <span>Análise</span>
+                </button>
+                <button class="mobile-nav-item" data-section="recommendations">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Recomendações</span>
+                </button>
+                <button class="mobile-nav-item" data-section="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Perfil</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h2>Dashboard do Sono</h2>
+                    <div class="time-display" id="currentTime"></div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Sleep Score Card -->
+                    <div class="metric-card sleep-score">
+                        <div class="card-header">
+                            <h3>Score do Sono</h3>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="score-display">
+                            <div class="score-circle">
+                                <span id="sleepScore">85</span>
+                                <small>/100</small>
+                            </div>
+                        </div>
+                        <div class="score-trend">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+5 desde ontem</span>
+                        </div>
+                    </div>
+
+                    <!-- Sleep Duration -->
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <h3>Duração do Sono</h3>
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-value">
+                            <span id="sleepDuration">7h 32m</span>
+                        </div>
+                        <div class="metric-subtitle">
+                            <span>Meta: 8h</span>
+                        </div>
+                    </div>
+
+                    <!-- Sleep Efficiency -->
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <h3>Eficiência</h3>
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="metric-value">
+                            <span id="sleepEfficiency">92%</span>
+                        </div>
+                        <div class="metric-subtitle">
+                            <span>Excelente</span>
+                        </div>
+                    </div>
+
+                    <!-- Deep Sleep -->
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <h3>Sono Profundo</h3>
+                            <i class="fas fa-bed"></i>
+                        </div>
+                        <div class="metric-value">
+                            <span id="deepSleep">2h 15m</span>
+                        </div>
+                        <div class="metric-subtitle">
+                            <span>30% do total</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sleep Chart -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Padrão de Sono - Últimos 7 Dias</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn active" data-period="7d">7 dias</button>
+                            <button class="chart-btn" data-period="30d">30 dias</button>
+                            <button class="chart-btn" data-period="90d">90 dias</button>
+                        </div>
+                    </div>
+                    <canvas id="sleepChart"></canvas>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Ações Rápidas</h3>
+                    <div class="actions-grid">
+                        <button class="action-btn" id="startSleepBtn">
+                            <i class="fas fa-play"></i>
+                            <span>Iniciar Sono</span>
+                        </button>
+                        <button class="action-btn" id="stopSleepBtn">
+                            <i class="fas fa-stop"></i>
+                            <span>Parar Monitoramento</span>
+                        </button>
+                        <button class="action-btn" id="emergencyBtn">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Alerta Médico</span>
+                        </button>
+                        <button class="action-btn" id="exportBtn">
+                            <i class="fas fa-download"></i>
+                            <span>Exportar Dados</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monitoring Section -->
+            <section id="monitoring" class="content-section">
+                <div class="section-header">
+                    <h2>Monitoramento em Tempo Real</h2>
+                    <div class="monitoring-status" id="monitoringStatus">
+                        <div class="status-indicator active"></div>
+                        <span>Monitorando</span>
+                    </div>
+                </div>
+
+                <!-- Real-time Metrics -->
+                <div class="realtime-metrics">
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h4>Frequência Cardíaca</h4>
+                            <div class="metric-value" id="heartRate">72 BPM</div>
+                            <div class="metric-status normal">Normal</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-lungs"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h4>Taxa Respiratória</h4>
+                            <div class="metric-value" id="breathingRate">16 RPM</div>
+                            <div class="metric-status normal">Normal</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h4>Temperatura Corporal</h4>
+                            <div class="metric-value" id="bodyTemp">36.5°C</div>
+                            <div class="metric-status normal">Normal</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-running"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h4>Movimento</h4>
+                            <div class="metric-value" id="movement">Baixo</div>
+                            <div class="metric-status normal">Dormindo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sleep Stages Visualization -->
+                <div class="sleep-stages">
+                    <h3>Estágios do Sono</h3>
+                    <div class="stages-timeline" id="stagesTimeline">
+                        <!-- Sleep stages will be dynamically generated -->
+                    </div>
+                </div>
+
+                <!-- IoT Sensors Status -->
+                <div class="sensors-status">
+                    <h3>Status dos Sensores IoT</h3>
+                    <div class="sensors-grid" id="sensorsGrid">
+                        <!-- Sensor status will be dynamically generated -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analysis Section -->
+            <section id="analysis" class="content-section">
+                <div class="section-header">
+                    <h2>Análise Inteligente</h2>
+                    <div class="analysis-controls">
+                        <button class="analysis-btn active" data-type="patterns">Padrões</button>
+                        <button class="analysis-btn" data-type="anomalies">Anomalias</button>
+                        <button class="analysis-btn" data-type="trends">Tendências</button>
+                    </div>
+                </div>
+
+                <!-- AI Analysis Results -->
+                <div class="analysis-results">
+                    <div class="analysis-card">
+                        <div class="card-header">
+                            <h3>Análise de Padrões</h3>
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="analysis-content">
+                            <div class="pattern-item">
+                                <h4>Padrão de Sono Regular</h4>
+                                <p>Seu horário de dormir é consistente, com variação média de apenas 15 minutos.</p>
+                                <div class="confidence-score">
+                                    <span>Confiança: 94%</span>
+                                </div>
+                            </div>
+                            <div class="pattern-item">
+                                <h4>Qualidade do Sono Profundo</h4>
+                                <p>Você atinge sono profundo de forma eficiente, geralmente em 20-30 minutos.</p>
+                                <div class="confidence-score">
+                                    <span>Confiança: 87%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analysis-card">
+                        <div class="card-header">
+                            <h3>Detecção de Anomalias</h3>
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="analysis-content">
+                            <div class="anomaly-item">
+                                <div class="anomaly-severity high">Alta</div>
+                                <h4>Despertar Noturno Prolongado</h4>
+                                <p>Detectado despertar de 45 minutos às 2:30 AM. Possível causa: estresse.</p>
+                                <div class="anomaly-time">Há 2 dias</div>
+                            </div>
+                            <div class="anomaly-item">
+                                <div class="anomaly-severity medium">Média</div>
+                                <h4>Frequência Cardíaca Elevada</h4>
+                                <p>FC média 15% acima do normal durante o sono REM.</p>
+                                <div class="anomaly-time">Há 5 dias</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Machine Learning Insights -->
+                <div class="ml-insights">
+                    <h3>Insights de Machine Learning</h3>
+                    <div class="insights-grid">
+                        <div class="insight-card">
+                            <div class="insight-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="insight-content">
+                                <h4>Predição de Qualidade</h4>
+                                <p>Baseado nos últimos 30 dias, sua qualidade de sono deve melhorar 12% na próxima semana.</p>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="insight-content">
+                                <h4>Horário Ideal</h4>
+                                <p>Seu horário ideal para dormir é entre 22:30 e 23:00 para máxima eficiência.</p>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <div class="insight-content">
+                                <h4>Fatores Ambientais</h4>
+                                <p>Temperatura ideal detectada: 18-20°C. Umidade: 45-55%.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recommendations Section -->
+            <section id="recommendations" class="content-section">
+                <div class="section-header">
+                    <h2>Recomendações Personalizadas</h2>
+                    <div class="recommendation-filter">
+                        <button class="filter-btn active" data-category="all">Todas</button>
+                        <button class="filter-btn" data-category="environment">Ambiente</button>
+                        <button class="filter-btn" data-category="lifestyle">Estilo de Vida</button>
+                        <button class="filter-btn" data-category="medical">Médicas</button>
+                    </div>
+                </div>
+
+                <!-- Personalized Recommendations -->
+                <div class="recommendations-grid">
+                    <div class="recommendation-card priority-high">
+                        <div class="card-header">
+                            <h3>Alta Prioridade</h3>
+                            <div class="priority-badge high">Alta</div>
+                        </div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-item">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div class="recommendation-text">
+                                    <h4>Reduzir Temperatura do Quarto</h4>
+                                    <p>Sua temperatura corporal está elevada durante o sono. Reduza a temperatura do quarto para 18°C.</p>
+                                    <div class="recommendation-impact">
+                                        <span>Impacto esperado: +15 pontos no score</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card priority-medium">
+                        <div class="card-header">
+                            <h3>Média Prioridade</h3>
+                            <div class="priority-badge medium">Média</div>
+                        </div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-item">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </div>
+                                <div class="recommendation-text">
+                                    <h4>Evitar Telas 1h Antes de Dormir</h4>
+                                    <p>O uso de dispositivos antes de dormir está afetando sua qualidade de sono.</p>
+                                    <div class="recommendation-impact">
+                                        <span>Impacto esperado: +8 pontos no score</span>
+                                    </div>
+                                </div>
+                            </div>
+            </div>
+        </div>
+
+                    <div class="recommendation-card priority-low">
+                        <div class="card-header">
+                            <h3>Baixa Prioridade</h3>
+                            <div class="priority-badge low">Baixa</div>
+                        </div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-item">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-coffee"></i>
+                                </div>
+                                <div class="recommendation-text">
+                                    <h4>Reduzir Cafeína Após 14h</h4>
+                                    <p>Consumir cafeína tarde pode afetar o sono profundo.</p>
+                                    <div class="recommendation-impact">
+                                        <span>Impacto esperado: +5 pontos no score</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Plan -->
+                <div class="action-plan">
+                    <h3>Plano de Ação Personalizado</h3>
+                    <div class="plan-timeline">
+                        <div class="plan-step completed">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Configurar Ambiente</h4>
+                                <p>Ajustar temperatura e umidade do quarto</p>
+                                <span class="step-status">Concluído</span>
+                            </div>
+                        </div>
+                        <div class="plan-step active">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Estabelecer Rotina</h4>
+                                <p>Criar horário consistente para dormir</p>
+                                <span class="step-status">Em andamento</span>
+                            </div>
+                        </div>
+                        <div class="plan-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Monitorar Progresso</h4>
+                                <p>Acompanhar melhorias por 2 semanas</p>
+                                <span class="step-status">Pendente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile" class="content-section">
+                <div class="section-header">
+                    <h2>Perfil do Usuário</h2>
+                    <button class="edit-profile-btn" id="editProfileBtn">
+                        <i class="fas fa-edit"></i>
+                        Editar
+                    </button>
+                </div>
+
+                <!-- User Profile -->
+                <div class="profile-content">
+                    <div class="profile-card">
+                        <div class="profile-avatar">
+                            <img id="profileImage" src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="Avatar">
+                            <div class="avatar-overlay" id="avatarOverlay">
+                                <i class="fas fa-camera"></i>
+                                <span>Alterar Foto</span>
+                            </div>
+                            <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="profile-info">
+                            <h3 id="userName">Usuário SleepSynncc</h3>
+                            <p id="userEmail">usuario@sleepsynncc.com</p>
+                            <div class="profile-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value">45</span>
+                                    <span class="stat-label">Dias Monitorados</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">78</span>
+                                    <span class="stat-label">Score Médio</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">12</span>
+                                    <span class="stat-label">Recomendações Seguidas</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="settings-section">
+                        <h3>Configurações</h3>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Notificações</h4>
+                                    <p>Receber alertas sobre qualidade do sono</p>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Monitoramento Automático</h4>
+                                    <p>Iniciar monitoramento automaticamente</p>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Compartilhar Dados</h4>
+                                    <p>Permitir análise anônima para melhorias</p>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                </div>
+            </div>
+        </div>
+
+                    <!-- Data Export -->
+                    <div class="data-section">
+                        <h3>Dados e Privacidade</h3>
+                        <div class="data-actions">
+                            <button class="data-btn">
+                                <i class="fas fa-download"></i>
+                                Exportar Dados
+                            </button>
+                            <button class="data-btn">
+                                <i class="fas fa-trash"></i>
+                                Deletar Conta
+                            </button>
+                            <button class="data-btn">
+                                <i class="fas fa-shield-alt"></i>
+                                Política de Privacidade
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="fab">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <!-- Alert Modal -->
+    <div class="modal" id="alertModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="alertTitle">Alerta do Sistema</h3>
+                <button class="close-btn" id="closeAlertBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="alertMessage">Mensagem do alerta</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="alertConfirmBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Image Preview Modal -->
+    <div class="modal" id="imagePreviewModal">
+        <div class="modal-content image-preview-modal">
+            <div class="modal-header">
+                <h3>Pré-visualização da Foto</h3>
+                <button class="close-btn" id="closeImagePreviewBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="image-preview-container">
+                    <img id="imagePreview" src="" alt="Pré-visualização">
+                </div>
+                <p>Esta será sua nova foto de perfil. Deseja confirmar a alteração?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelImageBtn">Cancelar</button>
+                <button class="btn btn-primary" id="confirmImageBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html> 
